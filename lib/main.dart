@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_gbk2utf8/flutter_gbk2utf8.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'native_code.dart';
@@ -110,6 +113,42 @@ class _MyHomePageState extends State<MyHomePage> {
     _addLog('网络状态更新: $_connectionStatus');
   }
 
+  Future<String> getGatewayMacAddress(String _gatewayAddress) async {
+    String gatewayMACAddress;
+
+    if (!_isManualMac) {
+      _addLog('获取光猫：$_gatewayAddress 的MAC地址中...');
+      gatewayMACAddress =
+          await NativeCode.getGatewayMACAddress(_gatewayAddress);
+    } else {
+      gatewayMACAddress = _manualMacAddress; // 使用手动输入的MAC地址
+      _addLog('已手动输入光猫MAC地址：${gatewayMACAddress}');
+    }
+
+    _addLog(gatewayMACAddress.isNotEmpty
+        ? '光猫 MAC 地址: $gatewayMACAddress'
+        : '无法连接到光猫');
+
+    return gatewayMACAddress;
+  }
+
+  Future<bool> tryEnableTelnet(
+      String gatewayAddress, String gatewayMACAddress) async {
+    _addLog('尝试开启telnet中...');
+    String url =
+        'http://$gatewayAddress/cgi-bin/telnetenable.cgi?telnetenable=1&key=$gatewayMACAddress';
+
+    // 发送GET请求
+    var response = await http.get(Uri.parse(url));
+    String responseBody = utf8.decode(response.bodyBytes);
+
+    // 判断telnet是否开启
+    bool isTelnetEnabled = responseBody.contains("if (1 == 1)");
+    _addLog(isTelnetEnabled ? 'telnet已开启' : 'telnet未开启');
+
+    return isTelnetEnabled;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,6 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     value: _isManualMac,
                     onChanged: (value) {
                       setState(() {
+                        _manualMacAddress = '';
                         _isManualMac = value;
                         _addLog('手动输入MAC地址: ${_isManualMac ? '开启' : '关闭'}');
                       });
@@ -181,19 +221,51 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: <Widget>[
                       ElevatedButton(
                         onPressed: () async {
-                          _addLog('尝试连接到光猫: $_gatewayAddress');
-                          String gatewayMACAddress;
-                          if (!_isManualMac) {
-                            gatewayMACAddress =
-                                await NativeCode.getGatewayMACAddress(
-                                    _gatewayAddress);
-                          } else {
-                            gatewayMACAddress =
-                                _manualMacAddress; // 使用手动输入的MAC地址
+                          // String gatewayMACAddress;
+                          // if (!_isManualMac) {
+                          //   _addLog('获取光猫MAC地址中...: $_gatewayAddress');
+                          //
+                          //   gatewayMACAddress =
+                          //       await NativeCode.getGatewayMACAddress(
+                          //           _gatewayAddress);
+                          // } else {
+                          //   gatewayMACAddress =
+                          //       _manualMacAddress; // 使用手动输入的MAC地址
+                          //
+                          //   _addLog('已手动输入光猫MAC地址：${gatewayMACAddress}');
+                          // }
+                          // _addLog(gatewayMACAddress.isNotEmpty
+                          //     ? '光猫 MAC 地址: $gatewayMACAddress'
+                          //     : '无法连接到光猫');
+
+                          // _addLog('尝试开启telnet中...');
+                          // String url =
+                          //     'http://$_gatewayAddress/cgi-bin/telnetenable.cgi?telnetenable=1&key=$gatewayMACAddress';
+                          // print('url为 $url');
+                          //
+                          // // 发送GET请求
+                          // var response = await http.get(Uri.parse(url));
+                          // String responseBody = utf8.decode(response.bodyBytes);
+                          // print(responseBody);
+                          //
+                          // // 判断telnet是否开启
+                          // bool isTelnetEnabled =
+                          //     responseBody.contains("if (1 == 1)");
+                          // _addLog(isTelnetEnabled ? 'telnet已开启' : 'telnet未开启');
+
+                          String gatewayMACAddress =
+                              await getGatewayMacAddress(_gatewayAddress);
+                          if (gatewayMACAddress.isEmpty) {
+                            _addLog('错误：MAC地址为空，操作终止');
+                            return;
                           }
-                          _addLog(gatewayMACAddress.isNotEmpty
-                              ? '光猫 MAC 地址: $gatewayMACAddress'
-                              : '无法连接到光猫');
+
+                          bool telnetEnabled = await tryEnableTelnet(
+                              _gatewayAddress, gatewayMACAddress);
+                          if (!telnetEnabled) {
+                            _addLog('错误：telnet未成功开启，操作终止');
+                            return;
+                          }
                         },
                         child: Text('连接到光猫'),
                       ),

@@ -1,5 +1,6 @@
 #include "flutter_window.h"
-#include "gateway_mac_finder.h"
+#include "utils/gateway_mac_finder.h"
+#include "utils/get_factory_config.h"
 
 #include <optional>
 
@@ -8,15 +9,27 @@
 #include <flutter/encodable_value.h>
 #include "flutter/generated_plugin_registrant.h"
 
+using CONFIG_DATA = std::unordered_map<std::string, std::string>;
+
 FlutterWindow::FlutterWindow(const flutter::DartProject &project)
     : project_(project) {}
 
 FlutterWindow::~FlutterWindow() {}
 
+flutter::EncodableMap ConvertToEncodableMap(const CONFIG_DATA &inputMap)
+{
+    flutter::EncodableMap encodableMap;
+    for (const auto &pair : inputMap)
+    {
+        encodableMap[flutter::EncodableValue(pair.first)] = flutter::EncodableValue(pair.second);
+    }
+    return encodableMap;
+}
+
 void ConfigureMethodChannel(flutter::FlutterEngine *engine)
 {
     auto method_channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-        engine->messenger(), "GetGatewayMACAddress",
+        engine->messenger(), "org.scars.info_cat",
         &flutter::StandardMethodCodec::GetInstance());
 
     method_channel->SetMethodCallHandler(
@@ -46,6 +59,32 @@ void ConfigureMethodChannel(flutter::FlutterEngine *engine)
                 std::string gatewayAddress = std::get<std::string>(gatewayAddressValue);
                 std::string response = getGatewayMACAddress(gatewayAddress);
                 result->Success(flutter::EncodableValue(response));
+            }
+            else if (call.method_name().compare("getFactoryConfig") == 0)
+            {
+                const auto *arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+                if (!arguments)
+                {
+                    result->Error("Bad Arguments", "Expected arguments to be a map");
+                    return;
+                }
+                if (arguments->find(flutter::EncodableValue("gatewayAddress")) ==
+                    arguments->end())
+                {
+                    result->Error("Missing argument", "Expected gatewayAddress");
+                    return;
+                }
+                const auto &gatewayAddressValue = arguments->at(
+                    flutter::EncodableValue("gatewayAddress"));
+                if (!std::holds_alternative<std::string>(gatewayAddressValue))
+                {
+                    result->Error("Invalid argument", "Expected string for gatewayAddress");
+                    return;
+                }
+                std::string gatewayAddress = std::get<std::string>(gatewayAddressValue);
+                auto factoryConfig = getFactoryConfig(gatewayAddress);
+                auto encodableFactoryConfig = ConvertToEncodableMap(factoryConfig);
+                result->Success(flutter::EncodableValue(encodableFactoryConfig));
             }
             else
             {

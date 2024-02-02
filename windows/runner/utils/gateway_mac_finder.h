@@ -3,6 +3,6 @@
 
 #include <string>
 
-std::string getGatewayMACAddress(const std::string& gatewayAddress);
+std::string getGatewayMACAddress(const std::string &gatewayAddress);
 
 #endif // GATEWAY_MAC_FINDER_H_

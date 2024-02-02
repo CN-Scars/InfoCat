@@ -30,9 +30,9 @@ std::string getGatewayMACAddress(const std::string &gatewayAddress)
         for (int i = 0; i < static_cast<int>(arpTable->dwNumEntries); ++i)
         {
             auto &row = arpTable->table[i];
-            in_addr addr;   // IPv4地址结构体
-            inet_pton(AF_INET, gatewayAddress.c_str(), &addr);  // 将字符串IP地址转换为in_addr结构体
-            if (row.dwAddr == addr.S_un.S_addr) // 检查是否是网关地址
+            in_addr addr;                                      // IPv4地址结构体
+            inet_pton(AF_INET, gatewayAddress.c_str(), &addr); // 将字符串IP地址转换为in_addr结构体
+            if (row.dwAddr == addr.S_un.S_addr)                // 检查是否是网关地址
             {
                 // 将MAC地址转换为字符串
                 std::stringstream macStream;

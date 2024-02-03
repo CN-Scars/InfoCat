@@ -33,7 +33,7 @@ dependencies:
   http: ^0.13.3
   flutter_gbk2utf8: ^1.0.0
   connectivity_plus: ^5.0.2
-  network_info_plus: ^4.1.0
+  network_info_plus: ^4.1.0+1
   url_launcher: ^6.0.9
   material_design_icons_flutter: ^7.0.7296
 

@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:network_info_plus/network_info_plus.dart';
+import 'package:network_info_plus/network_info_plus.dart' as NetworkInfo;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'native_code.dart';
@@ -33,6 +32,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  ConnectivityResult connectivityResult = ConnectivityResult.none;
   String _connectionStatus = 'Unknown';
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
@@ -73,7 +73,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _initConnectivity() async {
-    var connectivityResult;
     try {
       connectivityResult = await _connectivity.checkConnectivity();
     } catch (e) {
@@ -83,20 +82,16 @@ class _MyHomePageState extends State<MyHomePage> {
     _updateConnectionStatus(connectivityResult);
   }
 
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
-    String wifiName = '';
-    if (result == ConnectivityResult.wifi) {
-      if (Platform.isAndroid || Platform.isIOS) {
-        try {
-          wifiName = await NetworkInfo().getWifiName() ?? '未知 Wi-Fi';
-        } catch (e) {
-          print('无法获取 Wi-Fi 名称： $e');
-        }
-      }
+  Future<void> _updateConnectionStatus(
+      ConnectivityResult connectivityResult) async {
+    String? wifiName;
+    if (connectivityResult == ConnectivityResult.wifi) {
+      final info = NetworkInfo.NetworkInfo();
+      wifiName = await info.getWifiName();
     }
 
     setState(() {
-      switch (result) {
+      switch (connectivityResult) {
         case ConnectivityResult.wifi:
           _connectionStatus = '已连接到 Wi-Fi $wifiName';
           break;
@@ -220,7 +215,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('InfoCat: Home Modem Information Tool'),
+        title: Text('InfoCat: 家庭光猫信息查询工具'),
       ),
       body: Row(
         children: [
@@ -286,6 +281,19 @@ class _MyHomePageState extends State<MyHomePage> {
                                           _gatewayAddress);
                                   if (gatewayMACAddress.isEmpty) {
                                     _addLog('错误：MAC地址为空，操作终止');
+                                    switch (connectivityResult) {
+                                      case ConnectivityResult.none:
+                                        _addLog('请检查您的网络连接');
+                                        break;
+                                      case ConnectivityResult.wifi:
+                                        _addLog('请确认您的Wi-Fi连接是否来自光猫');
+                                      case ConnectivityResult.ethernet:
+                                        _addLog(
+                                            '请确认您的光猫是否正常且您的设备已经正常通过网线连接至光猫的LAN口');
+                                      default:
+                                        _addLog('网络连接异常');
+                                        break;
+                                    }
                                     return;
                                   }
 
@@ -300,6 +308,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                   var config =
                                       await NativeCode.getFactoryConfig(
                                           _gatewayAddress);
+                                  if (config.isEmpty) {
+                                    _addLog('错误：获取光猫工厂配置失败');
+                                    _addLog('请检查您的Windows系统是否支持并开启Telnet服务');
+                                    return;
+                                  }
+
                                   // 使用setState更新_factoryConfig，并触发界面重建
                                   setState(() {
                                     _factoryConfig = config;

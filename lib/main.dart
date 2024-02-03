@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'native_code.dart';
 
 void main() {
@@ -152,6 +154,68 @@ class _MyHomePageState extends State<MyHomePage> {
     return isTelnetEnabled;
   }
 
+  // 显示“关于”弹窗
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('关于软件'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('InfoCat是一个开源项目，旨在提供部分烽火品牌光猫的信息查询。'),
+                SizedBox(height: 8.0),
+                Text(
+                    '声明：本软件永久免费，严禁倒卖，违者必究。本软件的核心工作逻辑部分来源于互联网，具有时效性且不一定通用与所有设备。软件仅供学习交流使用，不得用于非法用途。用户由于使用本软件而产生的任何后果和法律责任，与本软件作者无关。'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('关于作者'),
+                    IconButton(
+                      icon: Icon(MdiIcons.github),
+                      iconSize: 40,
+                      onPressed: () async {
+                        const githubUrl = 'https://github.com/CN-Scars';
+                        if (await canLaunch(githubUrl)) {
+                          await launch(githubUrl);
+                        } else {
+                          throw '无法打开 $githubUrl';
+                        }
+                      },
+                    ),
+                    SizedBox(width: 16.0),
+                    Text('支持作者'),
+                    IconButton(
+                      icon: Icon(MdiIcons.patreon),
+                      iconSize: 40,
+                      onPressed: () async {
+                        const patreonUrl = 'https://patreon.com/ScarsMusic';
+                        if (await canLaunch(patreonUrl)) {
+                          await launch(patreonUrl);
+                        } else {
+                          throw '无法打开 $patreonUrl';
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('关闭'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,7 +309,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  // TODO: 关于软件弹窗
+                                  // ”关于“弹窗
+                                  _showAboutDialog();
                                 },
                                 child: Text('关于软件'),
                               ),

@@ -314,6 +314,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     return;
                                   }
 
+                                  _addLog('成功获取光猫工厂配置');
                                   // 使用setState更新_factoryConfig，并触发界面重建
                                   setState(() {
                                     _factoryConfig = config;

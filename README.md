@@ -42,7 +42,7 @@
 
 编译完成后，一般会自动启动软件
 
-![home_page](.\images\home_page.png)
+![home_page](images/home_page.png)
 
 ### 操作
 
@@ -51,15 +51,15 @@
 1. **填写信息**
    填写光猫的网关地址信息
 
-   ![gateway_address_information](.\images\gateway_address_information.png)
+   ![gateway_address_information](images/gateway_address_information.png)
 
    如果愿意，可以选择开启“手动获取MAC地址”开关来手动填入光猫的MAC地址，如果关闭则会自动获取
    
-   ![MAC_address_information](.\images\MAC_address_information.png)
+   ![MAC_address_information](images/MAC_address_information.png)
 
 2. **获取工厂配置**
    正常情况下，按下“连接到光猫”按钮后会自动获取到光猫的工厂配置，可以选择需要的配置项名称来查看其值
-   ![factory_config_information](D:\Android\AndroidStudioProjects\InfoCat\images\factory_config_information.png)
+   ![factory_config_information](images/factory_config_information.png)
 
 ## 注意事项
 

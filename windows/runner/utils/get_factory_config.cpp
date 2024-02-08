@@ -60,16 +60,11 @@ CONFIG_DATA parse_and_store_data(const std::string &data)
         size_t pos = line.find('=');
         if (pos != std::string::npos)
         {
-            std::cout << "当前行：" << line << std::endl;
-
             // 过滤掉不包含任何键或值的行
             std::string key = line.substr(0, pos);
             std::string value = line.substr(pos + 1);
             if (!key.empty() || !value.empty())
-            {
                 configMap[key] = value;
-                std::cout << "已存储：" << key << " : " << value << std::endl;
-            }
         }
     }
 
